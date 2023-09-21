@@ -401,35 +401,39 @@ def betterEvaluationFunction(currentGameState: GameState):
     finalScore = currentGameState.getScore()
     pacPos = currentGameState.getPacmanPosition()
     foodList = currentGameState.getFood().asList()
-    capsuleList = currentGameState.getCapsules()
-    ghostStates = currentGameState.getGhostStates()
     foodDistances = []
-    capsuleDistances = []
-    ghostDistances = []
 
     # if the state is already win or lose, just return final score
     if currentGameState.isWin() or currentGameState.isLose():
         return finalScore
-
+    # basic evaluation -> eat the food!
     for food in foodList:
         foodDistances.append(manhattanDistance(pacPos, food))
-    # for capsule in capsuleList:
-    #     capsuleDistances.append(manhattanDistance(pacPos, capsule))
-    # for ghost in ghostStates:
-    #     ghostPos = ghost.getPosition()
-    #     ghostDistances.append(manhattanDistance(pacPos, ghostPos))
-
-    # newScaredTimes = [ghostState.scaredTimer for ghostState in ghostStates]
-    # # avoid being caught by ghost
-    # if min(newScaredTimes) == 0 and min(ghostDistances) < 2:
-    #     return -1
-    # # get capsule to eat the ghost!
-    # elif len(capsuleDistances) > 0:
-    #     return finalScore - min(capsuleDistances)
-    # elif min(newScaredTimes) > 0:
-    #     return finalScore - min(ghostDistances)
 
     finalScore += 1 / min(foodDistances)
+
+    # let's hunt the ghost
+    capsuleList = currentGameState.getCapsules()
+    ghostStates = currentGameState.getGhostStates()
+    capsuleDistances = []
+    ghostDistances = []
+    for capsule in capsuleList:
+        capsuleDistances.append(manhattanDistance(pacPos, capsule))
+    for ghost in ghostStates:
+        ghostPos = ghost.getPosition()
+        ghostDistances.append(manhattanDistance(pacPos, ghostPos))
+    ScaredTime = [ghostState.scaredTimer for ghostState in ghostStates]
+
+    # ghost huntable!
+    if sum(ScaredTime) > 0:
+        # hunt the last shortest ghost
+        targetIndex = ScaredTime.index(min(ScaredTime))
+        bonus = 100
+        finalScore += bonus - ghostDistances[targetIndex]
+    # no ghost to hunt, go get the capsule!
+    elif len(capsuleDistances) > 0:
+        finalScore -= min(capsuleDistances)
+
     return finalScore
     util.raiseNotDefined()
 
