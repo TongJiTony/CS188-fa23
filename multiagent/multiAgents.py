@@ -211,7 +211,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
         for action in actions:
             successor = gameState.generateSuccessor(agentIndex, action)
             # finish all min layers search in one depth -> back to PACMAN
-            if agentIndex + 1 == gameState.getNumAgents:
+            if agentIndex + 1 == gameState.getNumAgents():
                 minVal = min(minVal, self.value(successor, depth + 1, PACMAN_INDEX))
             else:
                 minVal = min(minVal, self.value(successor, depth, agentIndex + 1))
