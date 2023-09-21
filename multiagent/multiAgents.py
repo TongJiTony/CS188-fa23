@@ -228,7 +228,97 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
+        return self.getBestAction(gameState)
         util.raiseNotDefined()
+
+    # helper function
+    def getBestAction(self, gameState: GameState):
+        maxVal = NEGATIVE_INFINITE
+        minOption = POSITIVE_INFINITE
+        maxOption = NEGATIVE_INFINITE
+        bestAction = Directions.STOP
+        actions = gameState.getLegalActions(PACMAN_INDEX)
+        for action in actions:
+            successor = gameState.generateSuccessor(PACMAN_INDEX, action)
+            tempVal = self.value(successor, 0, PACMAN_INDEX + 1, minOption, maxOption)
+            if tempVal > maxVal:
+                maxVal = tempVal
+                bestAction = action
+            if maxVal > minOption:
+                return maxVal
+            maxOption = max(maxVal, maxOption)
+        return bestAction
+
+    def value(
+        self,
+        gameState: GameState,
+        depth: int,
+        agentIndex: int,
+        minOption: int,
+        maxOption: int,
+    ):
+        # reach terminate state
+        if depth == self.depth or gameState.isLose() or gameState.isWin():
+            return self.evaluationFunction(gameState)
+
+        if agentIndex == PACMAN_INDEX:
+            return self.maxValue(gameState, depth, agentIndex, minOption, maxOption)
+        else:
+            return self.minValue(gameState, depth, agentIndex, minOption, maxOption)
+
+    def maxValue(
+        self,
+        gameState: GameState,
+        depth: int,
+        agentIndex: int,
+        minOption: int,
+        maxOption: int,
+    ):
+        maxVal = NEGATIVE_INFINITE
+        actions = gameState.getLegalActions(agentIndex)
+        for action in actions:
+            successor = gameState.generateSuccessor(agentIndex, action)
+            maxVal = max(
+                maxVal,
+                self.value(successor, depth, agentIndex + 1, minOption, maxOption),
+            )
+            if maxVal > minOption:
+                return maxVal
+            maxOption = max(maxVal, maxOption)
+        return maxVal
+
+    def minValue(
+        self,
+        gameState: GameState,
+        depth: int,
+        agentIndex: int,
+        minOption: int,
+        maxOption: int,
+    ):
+        minVal = POSITIVE_INFINITE
+        actions = gameState.getLegalActions(agentIndex)
+        for action in actions:
+            successor = gameState.generateSuccessor(agentIndex, action)
+            # finish all min layers search in one depth -> back to PACMAN
+            if agentIndex + 1 == gameState.getNumAgents():
+                minVal = min(
+                    minVal,
+                    self.value(
+                        successor, depth + 1, PACMAN_INDEX, minOption, maxOption
+                    ),
+                )
+                if minVal < maxOption:
+                    return minVal
+                minOption = min(minVal, minOption)
+            else:
+                minVal = min(
+                    minVal,
+                    self.value(successor, depth, agentIndex + 1, minOption, maxOption),
+                )
+                if minVal < maxOption:
+                    return minVal
+                minOption = min(minVal, minOption)
+        return minVal
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
