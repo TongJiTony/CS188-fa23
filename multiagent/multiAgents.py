@@ -231,7 +231,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         return self.getBestAction(gameState)
         util.raiseNotDefined()
 
-    # helper function
+    # helper function - run maxValue on the first Pacman layer
     def getBestAction(self, gameState: GameState):
         maxVal = NEGATIVE_INFINITE
         minOption = POSITIVE_INFINITE
@@ -266,6 +266,10 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         else:
             return self.minValue(gameState, depth, agentIndex, minOption, maxOption)
 
+    # use maxOption as alpha, minOption as beta to prune;
+    # if maxVal > minOption, then the upper min layer would not choose this child tree, prune and return
+    # if minVal < maxOption, then the upper max layer would not choose this child tree, prune and return
+    # update the maxOption and minOption respectively, but only next child tree would be affected, not parent tree
     def maxValue(
         self,
         gameState: GameState,
@@ -334,7 +338,53 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         legal moves.
         """
         "*** YOUR CODE HERE ***"
+        return self.getBestAction(gameState)
         util.raiseNotDefined()
+
+    # helper function - run maxValue on the first Pacman layer
+    def getBestAction(self, gameState: GameState):
+        maxVal = NEGATIVE_INFINITE
+        bestAction = Directions.STOP
+        actions = gameState.getLegalActions(PACMAN_INDEX)
+        for action in actions:
+            successor = gameState.generateSuccessor(PACMAN_INDEX, action)
+            tempVal = self.value(successor, 0, PACMAN_INDEX + 1)
+            if tempVal > maxVal:
+                maxVal = tempVal
+                bestAction = action
+        return bestAction
+
+    def value(self, gameState: GameState, depth: int, agentIndex: int):
+        # reach terminate state
+        if depth == self.depth or gameState.isLose() or gameState.isWin():
+            return self.evaluationFunction(gameState)
+
+        if agentIndex == PACMAN_INDEX:
+            return self.maxValue(gameState, depth, agentIndex)
+        else:
+            return self.expectValue(gameState, depth, agentIndex)
+
+    def maxValue(self, gameState: GameState, depth: int, agentIndex: int):
+        maxVal = NEGATIVE_INFINITE
+        actions = gameState.getLegalActions(agentIndex)
+        for action in actions:
+            successor = gameState.generateSuccessor(agentIndex, action)
+            maxVal = max(maxVal, self.value(successor, depth, agentIndex + 1))
+        return maxVal
+
+    # return the expectation value of each goast layer
+    def expectValue(self, gameState: GameState, depth: int, agentIndex: int):
+        expectVal = 0
+        actions = gameState.getLegalActions(agentIndex)
+        for action in actions:
+            successor = gameState.generateSuccessor(agentIndex, action)
+            # finish all ghost layers search in one depth -> back to PACMAN
+            if agentIndex + 1 == gameState.getNumAgents():
+                expectVal += self.value(successor, depth + 1, PACMAN_INDEX)
+            else:
+                expectVal += self.value(successor, depth, agentIndex + 1)
+
+        return expectVal / len(actions)
 
 
 def betterEvaluationFunction(currentGameState: GameState):
@@ -342,9 +392,45 @@ def betterEvaluationFunction(currentGameState: GameState):
     Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
     evaluation function (question 5).
 
-    DESCRIPTION: <write something here so we know what you did>
+    DESCRIPTION:
+    1. Focus on getting food unless ghost come closer -> use manhatten distance to find minFoodDistance
+    2. Get Capsule along the way -> give capsule a proportion of scores
+    3. Once eaten capsule, go to kill the ghost first -> if scaredTime, give scaredghost high amount of scores
     """
     "*** YOUR CODE HERE ***"
+    finalScore = currentGameState.getScore()
+    pacPos = currentGameState.getPacmanPosition()
+    foodList = currentGameState.getFood().asList()
+    capsuleList = currentGameState.getCapsules()
+    ghostStates = currentGameState.getGhostStates()
+    foodDistances = []
+    capsuleDistances = []
+    ghostDistances = []
+
+    # if the state is already win or lose, just return final score
+    if currentGameState.isWin() or currentGameState.isLose():
+        return finalScore
+
+    for food in foodList:
+        foodDistances.append(manhattanDistance(pacPos, food))
+    # for capsule in capsuleList:
+    #     capsuleDistances.append(manhattanDistance(pacPos, capsule))
+    # for ghost in ghostStates:
+    #     ghostPos = ghost.getPosition()
+    #     ghostDistances.append(manhattanDistance(pacPos, ghostPos))
+
+    # newScaredTimes = [ghostState.scaredTimer for ghostState in ghostStates]
+    # # avoid being caught by ghost
+    # if min(newScaredTimes) == 0 and min(ghostDistances) < 2:
+    #     return -1
+    # # get capsule to eat the ghost!
+    # elif len(capsuleDistances) > 0:
+    #     return finalScore - min(capsuleDistances)
+    # elif min(newScaredTimes) > 0:
+    #     return finalScore - min(ghostDistances)
+
+    finalScore += 1 / min(foodDistances)
+    return finalScore
     util.raiseNotDefined()
 
 
