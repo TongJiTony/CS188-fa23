@@ -161,6 +161,7 @@ class PrioritizedSweepingValueIterationAgent(ValueIterationAgent):
         mdp = self.mdp
         for state in mdp.getStates():
             preds[state] = set()
+            preds[state].add(state)
 
         for state in mdp.getStates():
             for state in mdp.getStates():
@@ -168,11 +169,7 @@ class PrioritizedSweepingValueIterationAgent(ValueIterationAgent):
                     for nextState, _prob in mdp.getTransitionStatesAndProbs(
                         state, action
                     ):
-                        preds[nextState].add(state)
                         preds[nextState].update(preds[state])
-
-        for state in mdp.getStates():
-            preds[state].discard(state)
 
         # Initialize an empty priority queue.
         priorQueue = util.PriorityQueue()
