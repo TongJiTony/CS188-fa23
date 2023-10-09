@@ -139,6 +139,7 @@ class QLearningAgent(ReinforcementAgent):
         # sample = reward + discount*max(Q(nextState))
         sample = reward + self.discount * self.getValue(nextState)
         # Q(state,action) = (1-learningRate)*Q(state,action) + learningRate*sample
+        # QValue += learningRate*difference
         key = (state, action)
         self.qVals[key] = (1 - self.alpha) * self.qVals[key] + self.alpha * sample
         return
@@ -224,6 +225,7 @@ class ApproximateQAgent(PacmanQAgent):
         )
 
         # weight_i = weight_i + self.alpha*difference*f_i(s,a)
+        # weights += learningRate*difference*features
         feats = self.featExtractor.getFeatures(state, action)
         for key in feats:
             feats[key] *= self.alpha * diff
