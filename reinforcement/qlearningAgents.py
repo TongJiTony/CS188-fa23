@@ -69,9 +69,10 @@ class QLearningAgent(ReinforcementAgent):
         value = 0.0
         if len(legalActions) == 0:
             return value
+
         values = []
         for action in legalActions:
-            values.append(self.qVals[(state, action)])
+            values.append(self.getQValue(state, action))
         value = max(values)
         return value
         util.raiseNotDefined()
@@ -90,7 +91,7 @@ class QLearningAgent(ReinforcementAgent):
 
         qVals = util.Counter()
         for action in legalActions:
-            qVals[action] = self.qVals[(state, action)]
+            qVals[action] = self.getQValue(state, action)
         action = qVals.argMax()
         return action
 
@@ -205,6 +206,10 @@ class ApproximateQAgent(PacmanQAgent):
         where * is the dotProduct operator
         """
         "*** YOUR CODE HERE ***"
+        # get the feature vector
+        feats = self.featExtractor.getFeatures(state, action)
+        # return the dotProduct -> using __mul__() in util.Counter
+        return self.weights * feats
         util.raiseNotDefined()
 
     def update(self, state, action, nextState, reward):
@@ -212,6 +217,19 @@ class ApproximateQAgent(PacmanQAgent):
         Should update your weights based on transition
         """
         "*** YOUR CODE HERE ***"
+        # difference = [reward + discount*max_a'(qVal[(nextState,a')])]-qVal[(state,action)]
+        # max_a'(qVal[(nextState,a')]) = getValue(nextState)
+        diff = (reward + self.discount * self.getValue(nextState)) - self.getQValue(
+            state, action
+        )
+
+        # weight_i = weight_i + self.alpha*difference*f_i(s,a)
+        feats = self.featExtractor.getFeatures(state, action)
+        for key in feats:
+            feats[key] *= self.alpha * diff
+        self.weights += feats
+
+        return
         util.raiseNotDefined()
 
     def final(self, state):
