@@ -136,12 +136,11 @@ def joinFactors(factors: List[Factor]):
     # The first input is the list of unconditioned variables in your factor,
     # the second input is the list of conditioned variables in your factor,
     # and the third input is the dict of domains for your variables.
-    variableDomainsDict = {}
+    variableDomainsDict = list(factors)[0].variableDomainsDict()
     unconVars = set()
     conVars = set()
 
     for factor in factors:
-        variableDomainsDict = factor.variableDomainsDict()
         unconVars.update(factor.unconditionedVariables())
         conVars.update(factor.conditionedVariables())
     conVars = [var for var in conVars if var not in unconVars]
