@@ -127,7 +127,7 @@ def joinFactors(factors: List[Factor]):
             )
 
     "*** YOUR CODE HERE ***"
-    # # error handling
+    # error handling
     if factors == []:
         return None
     elif len(factors) == 1:
@@ -214,7 +214,25 @@ def eliminateWithCallTracking(callTrackingList=None):
             )
 
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # Create a factor.
+        # The first input is the list of unconditioned variables in your factor,
+        # the second input is the list of conditioned variables in your factor,
+        # and the third input is the dict of domains for your variables.
+        variableDomainsDict = factor.variableDomainsDict()
+        unconVars = factor.unconditionedVariables()
+        conVars = factor.conditionedVariables()
+        unconVars.remove(eliminationVariable)
+
+        newFactor = Factor(unconVars, conVars, variableDomainsDict)
+
+        # sum out all entries
+        for assignmentDict in newFactor.getAllPossibleAssignmentDicts():
+            probability = 0.0
+            for value in variableDomainsDict[eliminationVariable]:
+                assignmentDict[eliminationVariable] = value
+                probability += factor.getProbability(assignmentDict)
+            newFactor.setProbability(assignmentDict, probability)
+        return newFactor
         "*** END YOUR CODE HERE ***"
 
     return eliminate
