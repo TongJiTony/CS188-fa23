@@ -708,7 +708,11 @@ class ParticleFilter(InferenceModule):
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        numParticles = self.numParticles
+        legalPositions = self.legalPositions
+        for i in range(numParticles):
+            self.particles.append(legalPositions[i % len(legalPositions)])
+
         "*** END YOUR CODE HERE ***"
 
     def getBeliefDistribution(self):
@@ -720,7 +724,13 @@ class ParticleFilter(InferenceModule):
         This function should return a normalized distribution.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        beliefs = DiscreteDistribution()
+        for pos in self.particles:
+            beliefs[pos] = 0
+        for pos in self.particles:
+            beliefs[pos] += 1
+        beliefs.normalize()
+        return beliefs
         "*** END YOUR CODE HERE ***"
 
     ########### ########### ###########
@@ -740,7 +750,26 @@ class ParticleFilter(InferenceModule):
         the DiscreteDistribution may be useful.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        weightDistribution = DiscreteDistribution()
+        pacmanPosition = gameState.getPacmanPosition()
+        jailPosition = self.getJailPosition()
+
+        # get weight distribution, ghostPosition is evenly distributed in particles now
+        for ghostPosition in self.particles:
+            weightDistribution[ghostPosition] += self.getObservationProb(
+                observation, pacmanPosition, ghostPosition, jailPosition
+            )
+
+        # handle special case : all weight == 0
+        if abs(weightDistribution.total() - 0) < 1e-6:
+            self.initializeUniformly(gameState)
+            return
+
+        # resample particles
+        self.particles = []
+        for _ in range(self.numParticles):
+            self.particles.append(weightDistribution.sample())
+
         "*** END YOUR CODE HERE ***"
 
     ########### ########### ###########
@@ -753,5 +782,12 @@ class ParticleFilter(InferenceModule):
         gameState.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        newParticles = []
+        # for each particle, get its newPosDistribution, and then sample to get the new position
+        for oldPos in self.particles:
+            newParticles.append(
+                self.getPositionDistribution(gameState, oldPos).sample()
+            )
+
+        self.particles = newParticles
         "*** END YOUR CODE HERE ***"
