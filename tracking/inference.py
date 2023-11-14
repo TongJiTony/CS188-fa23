@@ -401,6 +401,8 @@ class DiscreteDistribution(dict):
         """
         "*** YOUR CODE HERE ***"
         denominator = self.total()  # sum is float
+        if abs(denominator - 0) < 1e-6:
+            return
         for key in self.keys():
             self[key] = self[key] / denominator
         "*** END YOUR CODE HERE ***"
@@ -635,7 +637,14 @@ class ExactInference(InferenceModule):
         position is known.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # B(X_{t+1}) = P(e_{t+1}|X_{t+1})*B'(X_(t+1))
+        pacmanPosition = gameState.getPacmanPosition()
+        jailPosition = self.getJailPosition()
+        ghostPositions = self.allPositions
+        for ghostPosition in ghostPositions:
+            self.beliefs[ghostPosition] *= self.getObservationProb(
+                observation, pacmanPosition, ghostPosition, jailPosition
+            )
         "*** END YOUR CODE HERE ***"
         self.beliefs.normalize()
 
