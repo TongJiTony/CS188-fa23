@@ -664,7 +664,7 @@ class ExactInference(InferenceModule):
         "*** YOUR CODE HERE ***"
         # B'(X_{t+1}) = sum(P(X_{t+1}|x_t)*B(X_(t))
         ghostPositions = self.allPositions
-        beliefsPrime = {}
+        beliefsPrime = DiscreteDistribution()
         for ghostPosition in ghostPositions:
             beliefsPrime[ghostPosition] = 0.0
 
