@@ -28,7 +28,7 @@ class PerceptronModel(object):
         Returns: a node containing a single number (the score)
         """
         "*** YOUR CODE HERE ***"
-        return nn.DotProduct(self.w, x)
+        return nn.DotProduct(self.get_weights(), x)
 
     def get_prediction(self, x):
         """
@@ -54,7 +54,7 @@ class PerceptronModel(object):
             for x, y in dataset.iterate_once(batch_size):
                 y_prime = self.get_prediction(x)
                 if nn.as_scalar(y) != y_prime:
-                    self.w.update(x, nn.as_scalar(y))
+                    self.get_weights().update(x, nn.as_scalar(y))
                     error_count += 1
             if error_count == 0:
                 break
@@ -70,6 +70,13 @@ class RegressionModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        self.batch_size = 200
+        self.hidden_layer_size = 512
+        self.w0 = nn.Parameter(1, self.hidden_layer_size)
+        self.b0 = nn.Parameter(1, self.hidden_layer_size)
+        self.w1 = nn.Parameter(self.hidden_layer_size, 1)
+        self.b1 = nn.Parameter(1, 1)
+        self.alpha = 0.05
 
     def run(self, x):
         """
@@ -81,6 +88,10 @@ class RegressionModel(object):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         "*** YOUR CODE HERE ***"
+        # hidden layers
+        hidden_layer = nn.ReLU(nn.AddBias(nn.Linear(x, self.w0), self.b0))
+        # return the last linear layer
+        return nn.AddBias(nn.Linear(hidden_layer, self.w1), self.b1)
 
     def get_loss(self, x, y):
         """
@@ -93,12 +104,28 @@ class RegressionModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SquareLoss(self.run(x), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        # parameter.update(direction, multiplier)
+        standard = 0.015
+        while 1:
+            for x, y in dataset.iterate_once(self.batch_size):
+                loss = self.get_loss(x, y)
+                grad = nn.gradients(loss, [self.w0, self.b0, self.w1, self.b1])
+
+                self.w0.update(grad[0], -self.alpha)
+                self.w1.update(grad[2], -self.alpha)
+                self.b0.update(grad[1], -self.alpha)
+                self.b1.update(grad[3], -self.alpha)
+
+            # terminate condition
+            if nn.as_scalar(loss) < standard:
+                return
 
 
 class DigitClassificationModel(object):
@@ -120,6 +147,16 @@ class DigitClassificationModel(object):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
 
+        self.batch_size = 100
+        self.hidden_layer_size = 200
+        self.input_size = 784
+        self.output_size = 10
+        self.w0 = nn.Parameter(self.input_size, self.hidden_layer_size)
+        self.b0 = nn.Parameter(1, self.hidden_layer_size)
+        self.w1 = nn.Parameter(self.hidden_layer_size, self.output_size)
+        self.b1 = nn.Parameter(1, self.output_size)
+        self.alpha = 0.5
+
     def run(self, x):
         """
         Runs the model for a batch of examples.
@@ -135,6 +172,10 @@ class DigitClassificationModel(object):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+        # hidden layers
+        hidden_layer = nn.ReLU(nn.AddBias(nn.Linear(x, self.w0), self.b0))
+        # return the last linear layer
+        return nn.AddBias(nn.Linear(hidden_layer, self.w1), self.b1)
 
     def get_loss(self, x, y):
         """
@@ -150,12 +191,26 @@ class DigitClassificationModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SoftmaxLoss(self.run(x), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        standard = 0.975
+        while 1:
+            for x, y in dataset.iterate_once(self.batch_size):
+                loss = self.get_loss(x, y)
+                grad = nn.gradients(loss, [self.w0, self.b0, self.w1, self.b1])
+
+                self.w0.update(grad[0], -self.alpha)
+                self.w1.update(grad[2], -self.alpha)
+                self.b0.update(grad[1], -self.alpha)
+                self.b1.update(grad[3], -self.alpha)
+
+            if dataset.get_validation_accuracy() > standard:
+                return
 
 
 class LanguageIDModel(object):
