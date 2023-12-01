@@ -329,7 +329,7 @@ class LanguageIDModel(object):
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
-        standard = 0.82
+        standard = 0.9
         while 1:
             for x, y in dataset.iterate_once(self.batch_size):
                 loss = self.get_loss(x, y)
