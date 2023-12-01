@@ -70,7 +70,7 @@ class RegressionModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
-        self.batch_size = 200
+        self.batch_size = 50
         self.hidden_layer_size = 512
         self.w0 = nn.Parameter(1, self.hidden_layer_size)
         self.b0 = nn.Parameter(1, self.hidden_layer_size)
@@ -123,8 +123,13 @@ class RegressionModel(object):
                 self.b0.update(grad[1], -self.alpha)
                 self.b1.update(grad[3], -self.alpha)
 
-            # terminate condition
-            if nn.as_scalar(loss) < standard:
+            # terminate condition - average loss < standard
+            if (
+                nn.as_scalar(
+                    self.get_loss(nn.Constant(dataset.x), nn.Constant(dataset.y))
+                )
+                < standard
+            ):
                 return
 
 
@@ -232,6 +237,27 @@ class LanguageIDModel(object):
 
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        # general network params
+        self.batch_size = 100
+        self.hidden_layer_size = 1000
+        # hidden size d should be sufficiently large.
+        self.hidden_dimension_size = 10000
+        self.input_size = self.num_chars
+        self.output_size = len(self.languages)
+        # the first layer of neural network W would create hidden state h, batch_size by hidden_layer_size
+        self.w0 = nn.Parameter(self.input_size, self.hidden_layer_size)
+        self.b0 = nn.Parameter(1, self.hidden_layer_size)
+        # seconde layer to convert to batch_size by hidden dimension size(d)
+        self.w1 = nn.Parameter(self.hidden_layer_size, self.hidden_dimension_size)
+        self.b1 = nn.Parameter(1, self.hidden_dimension_size)
+        # W_h hidden state param to transform h to combine with hidden_layer: batch_size*hidden_layer_size
+        self.wh = nn.Parameter(self.hidden_dimension_size, self.hidden_layer_size)
+
+        # the last layer of network, return batch_size by output_size
+        self.wlast = nn.Parameter(self.hidden_dimension_size, self.output_size)
+        self.blast = nn.Parameter(1, self.output_size)
+
+        self.alpha = 0.5
 
     def run(self, xs):
         """
@@ -263,6 +289,23 @@ class LanguageIDModel(object):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+        length = len(xs)
+        # the first action: create hidden state h
+
+        # get hidden_layer
+        z = nn.Linear(xs[0], self.w0)
+        hidden_layer = nn.ReLU(nn.AddBias(z, self.b0))
+        # get h
+        h = nn.AddBias(nn.Linear(hidden_layer, self.w1), self.b1)
+
+        # recurrent: compute z based on xs_(i+1) and h
+        for i in range(length - 1):
+            z = nn.Add(nn.Linear(xs[i + 1], self.w0), nn.Linear(h, self.wh))
+            hidden_layer = nn.ReLU(nn.AddBias(z, self.b0))
+            # get h
+            h = nn.AddBias(nn.Linear(hidden_layer, self.w1), self.b1)
+
+        return nn.AddBias(nn.Linear(h, self.wlast), self.blast)
 
     def get_loss(self, xs, y):
         """
@@ -279,9 +322,37 @@ class LanguageIDModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SoftmaxLoss(self.run(xs), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        standard = 0.82
+        while 1:
+            for x, y in dataset.iterate_once(self.batch_size):
+                loss = self.get_loss(x, y)
+                grad = nn.gradients(
+                    loss,
+                    [
+                        self.w0,
+                        self.w1,
+                        self.wh,
+                        self.wlast,
+                        self.b0,
+                        self.b1,
+                        self.blast,
+                    ],
+                )
+
+                self.w0.update(grad[0], -self.alpha)
+                self.w1.update(grad[1], -self.alpha)
+                self.wh.update(grad[2], -self.alpha)
+                self.wlast.update(grad[3], -self.alpha)
+                self.b0.update(grad[4], -self.alpha)
+                self.b1.update(grad[5], -self.alpha)
+                self.blast.update(grad[6], -self.alpha)
+
+            if dataset.get_validation_accuracy() > standard:
+                return
