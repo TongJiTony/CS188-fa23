@@ -239,7 +239,7 @@ class LanguageIDModel(object):
         "*** YOUR CODE HERE ***"
         # general network params
         self.batch_size = 10
-        self.hidden_layer_size = 100
+        self.hidden_layer_size = 300
         # hidden size d should be sufficiently large.
         self.hidden_dimension_size = 500
         self.input_size = self.num_chars
@@ -257,7 +257,7 @@ class LanguageIDModel(object):
         self.wlast = nn.Parameter(self.hidden_dimension_size, self.output_size)
         self.blast = nn.Parameter(1, self.output_size)
 
-        self.alpha = 0.01
+        self.alpha = 0.02
 
     def run(self, xs):
         """
@@ -329,7 +329,7 @@ class LanguageIDModel(object):
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
-        standard = 0.9
+        standard = 0.85
         while 1:
             for x, y in dataset.iterate_once(self.batch_size):
                 loss = self.get_loss(x, y)
