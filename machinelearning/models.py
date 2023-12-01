@@ -257,7 +257,7 @@ class LanguageIDModel(object):
         self.wlast = nn.Parameter(self.hidden_dimension_size, self.output_size)
         self.blast = nn.Parameter(1, self.output_size)
 
-        self.alpha = 0.05
+        self.alpha = 0.01
 
     def run(self, xs):
         """
