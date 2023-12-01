@@ -238,10 +238,10 @@ class LanguageIDModel(object):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
         # general network params
-        self.batch_size = 100
-        self.hidden_layer_size = 1000
+        self.batch_size = 10
+        self.hidden_layer_size = 100
         # hidden size d should be sufficiently large.
-        self.hidden_dimension_size = 10000
+        self.hidden_dimension_size = 500
         self.input_size = self.num_chars
         self.output_size = len(self.languages)
         # the first layer of neural network W would create hidden state h, batch_size by hidden_layer_size
